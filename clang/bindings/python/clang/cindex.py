@@ -1824,6 +1824,10 @@ class Cursor(Structure):
         """Returns the value of the indicated arg as an unsigned 64b integer."""
         return conf.lib.clang_Cursor_getTemplateArgumentUnsignedValue(self, num)
 
+    def evaluate(self):
+        """..."""
+        return conf.lib.clang_Cursor_Evaluate(self)
+
     def get_children(self):
         """Return an iterator for accessing the children of this cursor."""
 
@@ -3269,6 +3273,64 @@ class CompilationDatabase(ClangObject):
         return conf.lib.clang_CompilationDatabase_getAllCompileCommands(self)
 
 
+class EvalResultKind(BaseEnumeration):
+    """
+    """
+
+    # The required BaseEnumeration declarations.
+    _kinds = []
+    _name_map = None
+
+    def __repr__(self):
+        return 'EvalResultKind.%s' % (self.name,)
+
+
+EvalResultKind.INT = EvalResultKind(1)
+EvalResultKind.FLOAT = EvalResultKind(2)
+EvalResultKind.OBJCSTRLITERAL = EvalResultKind(3)
+EvalResultKind.STRLITERAL = EvalResultKind(4)
+EvalResultKind.CFSTR = EvalResultKind(5)
+EvalResultKind.OTHER = EvalResultKind(6)
+EvalResultKind.UNEXPOSED = EvalResultKind(0)
+
+
+class EvalResult(ClangObject):
+    """
+    ...
+    """
+
+    def __del__(self):
+        conf.lib.clang_EvalResult_dispose(self)
+
+    @staticmethod
+    def from_result(res, fn, args):
+        if not res:
+            return None
+        return EvalResult(res)
+
+    @property
+    def kind(self):
+        return conf.lib.clang_EvalResult_getKind(self)
+
+    def get_as_int(self):
+        return conf.lib.clang_EvalResult_getAsInt(self)
+
+    def get_as_long_long(self):
+        return conf.lib.clang_EvalResult_getAsLongLong(self)
+
+    def get_as_unsigned_int(self):
+        return conf.lib.clang_EvalResult_getAsUnsigned(self)
+
+    def get_as_double(self):
+        return conf.lib.clang_EvalResult_getAsDouble(self)
+
+    def get_as_str(self):
+        return conf.lib.clang_EvalResult_getAsStr(self)
+
+    def is_unsigned_int(self):
+        return conf.lib.clang_EvalResult_isUnsignedInt(self)
+
+
 class Token(Structure):
     """Represents a single token from the preprocessor.
 
@@ -3959,6 +4021,43 @@ functionList = [
 
   ("clang_visitChildren",
    [Cursor, callbacks['cursor_visit'], py_object],
+   c_uint),
+
+  ("clang_Cursor_Evaluate",
+   [Cursor],
+   c_object_p,
+   EvalResult.from_result),
+
+  ("clang_EvalResult_dispose",
+   [EvalResult]),
+
+  ("clang_EvalResult_getAsDouble",
+   [EvalResult],
+   c_double),
+
+  ("clang_EvalResult_getAsInt",
+   [EvalResult],
+   c_int),
+
+  ("clang_EvalResult_getAsLongLong",
+   [EvalResult],
+   c_longlong),
+
+  ("clang_EvalResult_getAsStr",
+   [EvalResult],
+   c_interop_string,
+   c_interop_string.to_python_string),
+
+  ("clang_EvalResult_getAsUnsigned",
+   [EvalResult],
+   c_ulonglong),
+
+  ("clang_EvalResult_getKind",
+   [EvalResult],
+   EvalResultKind.from_id),
+
+  ("clang_EvalResult_isUnsignedInt",
+   [EvalResult],
    c_uint),
 
   ("clang_Cursor_getNumArguments",
